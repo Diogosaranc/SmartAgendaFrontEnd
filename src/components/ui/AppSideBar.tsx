@@ -14,6 +14,7 @@ import {
   SquareChartGantt,
   Warehouse,
   Building,
+  Plus,
 } from 'lucide-react';
 
 import {
@@ -51,6 +52,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from './select';
+import { useRouter } from 'next/navigation';
 
 // Menu items.
 const items = [
@@ -86,6 +88,21 @@ const items = [
   },
 ];
 
+const organizations = [
+  {
+    name: 'Harmonie',
+    description: 'Descrição da organização',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    name: 'Didi Corp',
+    description: 'Descrição da organização',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+];
+
 const user = {
   name: 'Diogo Saran',
   email: 'diogosaran@example.com',
@@ -99,6 +116,14 @@ type AppSidebarProps = {
 
 export default function AppSidebar({ className }: AppSidebarProps) {
   const pathName = usePathname();
+
+  const router = useRouter();
+
+  const onChange = (value: string) => {
+    if (value === 'new') {
+      router.push('/new-organization');
+    }
+  };
 
   return (
     <Sidebar className={cn('flex flex-col h-full', className)}>
@@ -117,13 +142,24 @@ export default function AppSidebar({ className }: AppSidebarProps) {
           </SidebarMenuItem>
         </SidebarMenu>
         <SidebarSeparator className='mx-0 w-full' />
-        <Select>
-          <SelectTrigger className='w-full'>
+        <Select onValueChange={onChange}>
+          <SelectTrigger className='w-full cursor-pointer'>
             <SelectValue placeholder='Organizações' />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value='option1'>Harmonie</SelectItem>
-            <SelectItem value='option2'>Didi Corp</SelectItem>
+            {organizations.map((organization) => (
+              <SelectItem
+                key={organization.name}
+                value={organization.name}
+                className='cursor-pointer'
+              >
+                {organization.name}
+              </SelectItem>
+            ))}
+            <SelectItem value='new' className='cursor-pointer'>
+              <Plus />
+              Nova organização
+            </SelectItem>
           </SelectContent>
         </Select>
       </SidebarHeader>

@@ -117,6 +117,8 @@ export default function ServicesPage() {
     },
   });
 
+  const { isSubmitting } = form.formState;
+
   const handleServiceChange = (value: string) => {
     if (value === 'new') {
       setIsCreating(true);
@@ -200,7 +202,7 @@ export default function ServicesPage() {
                 <Textarea {...form.register('observations')} />
                 <div className='grid grid-cols-2 gap-4'>
                   <Button onClick={() => onCancel()}>Cancelar</Button>
-                  <Button type='submit'>
+                  <Button type='submit' disabled={isSubmitting}>
                     {isCreating ? 'Criar' : 'Salvar'}
                   </Button>
                 </div>

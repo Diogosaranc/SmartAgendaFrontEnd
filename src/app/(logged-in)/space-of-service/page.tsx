@@ -67,6 +67,8 @@ export default function SpaceOfServicesPage() {
     },
   });
 
+  const { isSubmitting } = form.formState;
+
   const handlespaceOfServiceChange = (value: string) => {
     if (value === 'new') {
       setIsCreating(true);
@@ -135,7 +137,7 @@ export default function SpaceOfServicesPage() {
                 <Input {...form.register('description')} />
                 <div className='grid grid-cols-2 gap-4'>
                   <Button onClick={() => onCancel()}>Cancelar</Button>
-                  <Button type='submit'>
+                  <Button type='submit' disabled={isSubmitting}>
                     {isCreating ? 'Criar' : 'Salvar'}
                   </Button>
                 </div>
@@ -165,7 +167,7 @@ export default function SpaceOfServicesPage() {
                 </Select>
                 <Label className='text-sm'>Descrição:</Label>
                 {selectedspaceOfService ? (
-                  <p className='text-sm'>
+                  <p className='text-xs'>
                     {selectedspaceOfService.description}
                   </p>
                 ) : (
@@ -174,7 +176,7 @@ export default function SpaceOfServicesPage() {
                 <Label className='text-sm'>
                   Criado em:{' '}
                   {selectedspaceOfService ? (
-                    <p className='text-sm'>
+                    <p className='text-xs'>
                       {selectedspaceOfService.createdAt.toLocaleDateString(
                         'pt-BR'
                       )}
@@ -186,7 +188,7 @@ export default function SpaceOfServicesPage() {
                 <Label className='text-sm'>
                   Atualizado em:{' '}
                   {selectedspaceOfService ? (
-                    <p className='text-sm'>
+                    <p className='text-xs'>
                       {selectedspaceOfService.updatedAt.toLocaleDateString(
                         'pt-BR'
                       )}
