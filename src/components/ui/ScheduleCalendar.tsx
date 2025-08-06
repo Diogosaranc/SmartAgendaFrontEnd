@@ -1,14 +1,12 @@
 'use client';
 
-import * as React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 import { Calendar } from '@/components/ui/calendar';
 
 import { ptBR } from 'react-day-picker/locale';
-import { Card } from '@/components/ui/card';
-import ScheduleItem from './components/ScheduleItem';
-import { useState, useEffect, useRef } from 'react';
-import AgendaItem from './components/AgendaItem';
+import { Card, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 const schedules = [
   { time: '08:00', available: true },
@@ -33,10 +31,23 @@ const schedules = [
   { time: '17:30', available: false },
 ];
 
-export default function CalendarPage() {
-  const [date, setDate] = useState<Date | undefined>(new Date());
+interface ScheduleCalendarProps {
+  date: Date | undefined;
+  setDate: (date: Date | undefined) => void;
+  time: string;
+  setTime: (time: string) => void;
+  available: boolean;
+  setAvailable: (available: boolean) => void;
+}
+
+export default function ScheduleCalendar({
+  date,
+  setDate,
+  time,
+  setTime,
+  setAvailable,
+}: ScheduleCalendarProps) {
   const [hasSelectedDate, setHasSelectedDate] = useState(false);
-  const [time, setTime] = useState<string | undefined>(undefined);
   const cardRef = useRef<HTMLDivElement>(null);
   const agendaRef = useRef<HTMLDivElement>(null);
 
@@ -78,17 +89,17 @@ export default function CalendarPage() {
 
   const onSelectTime = (time: string) => {
     setTime(time);
+    setAvailable(isAvailable());
   };
 
   const isAvailable = (): boolean => {
     const timeAvailable = schedules.find((schedule) => schedule.time === time);
-
     return timeAvailable ? timeAvailable.available : false;
   };
 
   return (
     <div
-      className={`lg:grid grid-cols-4 gap-6 w-full max-w-[1280px] mx-auto max-h-[calc(100vh-8rem)] sm:mb-5`}
+      className={`lg:grid grid-cols-4 gap-2 w-full max-w-full mx-auto max-h-[calc(100vh-8rem)] sm:max-h-full sm:mb-5`}
     >
       <div
         className={`sm:invisible ${
@@ -120,11 +131,11 @@ export default function CalendarPage() {
             : 'col-span-1 col-start-4' // Position at end when just date selected
         }`}
       >
-        <p className='text-sm text-muted-foreground text-center'>
+        <p className='text-xs text-muted-foreground text-center'>
           Selecione um horário
         </p>
-        <div className='flex gap-4 justify-center mt-2 mb-2 text-xs'>
-          <div className='flex items-center gap-2'>
+        <div className='grid gap-1 mt-0 mb-0 text-xs'>
+          <div className='flex items-center gap-1'>
             <span className='w-3 h-3 bg-primary rounded'></span>
             <span>Disponível</span>
           </div>
@@ -133,7 +144,7 @@ export default function CalendarPage() {
             <span>Ocupado</span>
           </div>
         </div>
-        <div className='grid relative text-center gap-2 mt-2 overflow-y-auto max-h-96 w-[70%]'>
+        <div className='grid relative text-center gap-1 mt-0 overflow-y-auto max-h-[calc(65vh-20rem)] w-[70%]'>
           {schedules.map((schedule) => (
             <ScheduleItem
               key={schedule.time}
@@ -148,19 +159,61 @@ export default function CalendarPage() {
         ref={agendaRef}
         className={
           'col-span-1 flex items-center flex-col mt-4 lg:mt-0' +
-          (!time ? ' hidden' : '')
+          (!!time ? '' : ' hidden')
         }
       >
-        <h2 className='text-lg font-semibold'>Agenda, {formattedDate}</h2>
-        <p className='text-sm text-muted-foreground'>
+        <h2 className='text-sm text-center font-semibold'>{formattedDate}</h2>
+        <p className='text-xs text-center text-muted-foreground'>
           Você selecionou o horário: <strong>{time}</strong>
         </p>
-        <AgendaItem
-          available={isAvailable()}
-          client='Diogo'
-          onClick={() => alert('Agendamento realizado com sucesso!')}
-        />
+        <AgendaItem available={isAvailable()} client='Diogo' />
       </Card>
     </div>
+  );
+}
+
+interface AgendaItemProps {
+  available: boolean;
+  client: string;
+}
+
+export function AgendaItem({ available, client }: AgendaItemProps) {
+  const agendaAvailable = (
+    <>
+      <CardTitle className='text-md text-center'>Disponível</CardTitle>
+    </>
+  );
+
+  const agendaUnavailable = (
+    <>
+      <CardTitle className='text-md text-center'>
+        Indisponível - {client}
+      </CardTitle>
+    </>
+  );
+  return (
+    <Card className='flex items-center w-[90%]'>
+      {available ? agendaAvailable : agendaUnavailable}
+    </Card>
+  );
+}
+
+interface ScheduleItemProps {
+  time: string;
+  available: boolean;
+  onClick: () => void;
+}
+
+export function ScheduleItem({ time, available, onClick }: ScheduleItemProps) {
+  return (
+    <Button
+      className={
+        'p-2 text-xm last:mb-1 ' + (available ? 'bg-primary' : 'bg-primary/50')
+      }
+      size='xs'
+      onClick={onClick}
+    >
+      {time}
+    </Button>
   );
 }

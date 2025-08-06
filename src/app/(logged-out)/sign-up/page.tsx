@@ -20,14 +20,16 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
+import { api } from '@/lib/axios';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { AxiosError } from 'axios';
 import { Calendar1 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
-const formSchema = z.object({
+const registerSchema = z.object({
   name: z
     .string()
     .min(3, { message: 'O nome deve ter pelo menos 3 caracteres' }),
@@ -56,8 +58,8 @@ const formSchema = z.object({
 
 export default function SignUpPage() {
   const router = useRouter();
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof registerSchema>>({
+    resolver: zodResolver(registerSchema),
     defaultValues: {
       name: '',
       email: '',
@@ -66,9 +68,19 @@ export default function SignUpPage() {
     },
   });
 
-  function onSubmit(data: z.infer<typeof formSchema>) {
-    console.log(data);
-    router.push('/home');
+  async function handleRegister(data: z.infer<typeof registerSchema>) {
+    try {
+      await api.post('/accounts', {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+      });
+    } catch (err) {
+      if (err instanceof AxiosError && err?.response?.data?.message)
+        alert(err?.response?.data?.message);
+      return;
+    }
+    router.push('/log-in');
   }
 
   return (
@@ -81,7 +93,7 @@ export default function SignUpPage() {
         <CardContent>
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit(onSubmit)}
+              onSubmit={form.handleSubmit(handleRegister)}
               className='flex flex-col gap-4'
             >
               <FormField
