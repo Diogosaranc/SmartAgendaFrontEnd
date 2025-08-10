@@ -56,6 +56,8 @@ import { useRouter } from 'next/navigation';
 import { useGetOrganizations } from '@/hooks/use-organizations';
 import type { Organization } from '@/lib/api/organizations';
 import { Skeleton } from './skeleton';
+import { getInitials } from '@/lib/get-initals';
+import { useGetUser } from '@/hooks/use-user';
 
 // Menu items.
 const items = [
@@ -91,21 +93,22 @@ const items = [
   },
 ];
 
-const user = {
-  name: 'Diogo Saran',
-  email: 'diogosaran@example.com',
-  avatar: 'https://github.com/xdiogoxd.png',
-};
-
 type AppSidebarProps = {
   className?: string;
   onNavigate?: () => void;
 };
 
+//todo: support avatarUrl
+
 export default function AppSidebar({ className }: AppSidebarProps) {
   const pathName = usePathname();
   const router = useRouter();
   const { data: organizations = [], isLoading } = useGetOrganizations();
+  const { data: user } = useGetUser();
+
+  const initials = getInitials(user?.name);
+
+  const avatarUrl = 'https://github.com/xdiogoxd.png';
 
   const onChange = (value: string) => {
     if (value === 'new') {
@@ -192,15 +195,27 @@ export default function AppSidebar({ className }: AppSidebarProps) {
                   className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
                 >
                   <Avatar className='h-8 w-8 rounded-lg grayscale'>
-                    <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback className='rounded-lg'>CN</AvatarFallback>
+                    {user ? (
+                      <AvatarImage src={avatarUrl} alt={user.name} />
+                    ) : (
+                      <AvatarFallback className='rounded-lg'>
+                        {initials}
+                      </AvatarFallback>
+                    )}
                   </Avatar>
-                  <div className='grid flex-1 text-left text-sm leading-tight'>
-                    <span className='truncate font-medium'>{user.name}</span>
-                    <span className='text-muted-foreground truncate text-xs'>
-                      {user.email}
-                    </span>
-                  </div>
+                  {user ? (
+                    <div className='grid flex-1 text-left text-sm leading-tight'>
+                      <span className='truncate font-medium'>{user.name}</span>
+                      <span className='text-muted-foreground truncate text-xs'>
+                        {user.email}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className='grid flex-1 text-left text-sm leading-tight space-y-1'>
+                      <Skeleton className='h-6 w-30 rounded-lg' />
+                      <Skeleton className='h-4 w-24 rounded-lg' />
+                    </div>
+                  )}
 
                   <EllipsisVerticalIcon className='ml-auto size-4' />
                 </SidebarMenuButton>
@@ -213,22 +228,36 @@ export default function AppSidebar({ className }: AppSidebarProps) {
                   sideOffset={4}
                 >
                   <DropdownMenuLabel className='p-0 font-normal'>
-                    <div className='flex items-center gap-2 px-1 py-1.5 text-left text-sm'>
-                      <Avatar className='h-8 w-8 rounded-lg'>
-                        <AvatarImage src={user.avatar} alt={user.name} />
-                        <AvatarFallback className='rounded-lg'>
-                          DS
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className='grid flex-1 text-left text-sm leading-tight'>
-                        <span className='truncate font-medium'>
-                          {user.name}
-                        </span>
-                        <span className='text-muted-foreground truncate text-xs'>
-                          {user.email}
-                        </span>
+                    {user ? (
+                      <div className='flex items-center gap-2 px-1 py-1.5 text-left text-sm'>
+                        <Avatar className='h-8 w-8 rounded-lg'>
+                          <AvatarImage src={avatarUrl} alt={user.name} />
+                          <AvatarFallback className='rounded-lg'>
+                            {initials}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className='grid flex-1 text-left text-sm leading-tight'>
+                          <span className='truncate font-medium'>
+                            {user.name}
+                          </span>
+                          <span className='text-muted-foreground truncate text-xs'>
+                            {user.email}
+                          </span>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className='flex items-center gap-2 px-1 py-1.5 text-left text-sm'>
+                        <Avatar className='h-8 w-8 rounded-lg'>
+                          <AvatarFallback className='rounded-lg'>
+                            {initials}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className='grid flex-1 text-left text-sm leading-tight space-y-1'>
+                          <Skeleton className='h-8 w-30 rounded-lg' />
+                          <Skeleton className='h-4 w-24 rounded-lg' />
+                        </div>
+                      </div>
+                    )}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>

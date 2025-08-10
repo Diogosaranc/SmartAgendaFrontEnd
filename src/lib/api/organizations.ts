@@ -1,5 +1,5 @@
 import { api } from "../axios";
-import { mapOrganizationToDTO, OrganizationDTO } from "./mapper";
+import { mapOrganizationToDTO, OrganizationDTO } from "./mapper/mappers";
 
 export interface Organization {
   id: string;
