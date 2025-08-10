@@ -53,6 +53,9 @@ import {
   SelectValue,
 } from './select';
 import { useRouter } from 'next/navigation';
+import { useGetOrganizations } from '@/hooks/use-organizations';
+import type { Organization } from '@/lib/api/organizations';
+import { Skeleton } from './skeleton';
 
 // Menu items.
 const items = [
@@ -88,21 +91,6 @@ const items = [
   },
 ];
 
-const organizations = [
-  {
-    name: 'Harmonie',
-    description: 'Descrição da organização',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    name: 'Didi Corp',
-    description: 'Descrição da organização',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
-
 const user = {
   name: 'Diogo Saran',
   email: 'diogosaran@example.com',
@@ -116,8 +104,8 @@ type AppSidebarProps = {
 
 export default function AppSidebar({ className }: AppSidebarProps) {
   const pathName = usePathname();
-
   const router = useRouter();
+  const { data: organizations = [], isLoading } = useGetOrganizations();
 
   const onChange = (value: string) => {
     if (value === 'new') {
@@ -147,15 +135,21 @@ export default function AppSidebar({ className }: AppSidebarProps) {
             <SelectValue placeholder='Organizações' />
           </SelectTrigger>
           <SelectContent>
-            {organizations.map((organization) => (
-              <SelectItem
-                key={organization.name}
-                value={organization.name}
-                className='cursor-pointer'
-              >
-                {organization.name}
+            {isLoading ? (
+              <SelectItem value='loading' disabled>
+                <Skeleton className='w-full h-8' />
               </SelectItem>
-            ))}
+            ) : (
+              organizations.map((organization: Organization) => (
+                <SelectItem
+                  key={organization.id}
+                  value={organization.id}
+                  className='cursor-pointer'
+                >
+                  {organization.name}
+                </SelectItem>
+              ))
+            )}
             <SelectItem value='new' className='cursor-pointer'>
               <Plus />
               Nova organização

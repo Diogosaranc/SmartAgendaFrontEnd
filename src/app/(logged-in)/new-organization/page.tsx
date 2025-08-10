@@ -10,12 +10,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Building } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useCreateOrganization } from '@/hooks/use-organizations';
+
+//todo: add a popup with success/error
+//todo: add missing fields of organization
 
 const formCreateOrganizationchema = z.object({
   name: z.string().min(2).max(15),
   // description: z.string().min(2).max(60),
-  createdAt: z.date(),
-  updatedAt: z.date(),
 });
 
 export default function CreateOrganizationPage() {
@@ -24,19 +27,37 @@ export default function CreateOrganizationPage() {
     defaultValues: {
       name: '',
       // description: '',
-      createdAt: new Date(),
-      updatedAt: new Date(),
     },
   });
 
   const { isSubmitting } = form.formState;
+  const router = useRouter();
+  const createOrganization = useCreateOrganization();
 
-  const onSubmit = (data: z.infer<typeof formCreateOrganizationchema>) => {
-    form.reset({
-      updatedAt: new Date(),
-    });
-    console.log(data);
-  };
+  function handleCreateOrganization(
+    data: z.infer<typeof formCreateOrganizationchema>
+  ) {
+    createOrganization.mutate(
+      {
+        name: data.name,
+      },
+      {
+        onSuccess: () => {
+          console.log('Organization created successfully!');
+          router.push('/home');
+        },
+        onError: (error: any) => {
+          console.error('Error creating organization:', error);
+          form.setError('root', {
+            type: 'manual',
+            message:
+              error?.response?.data?.message ||
+              'Erro ao criar organização. Tente novamente.',
+          });
+        },
+      }
+    );
+  }
 
   return (
     <Form {...form}>
@@ -50,7 +71,7 @@ export default function CreateOrganizationPage() {
           </CardHeader>
           <CardContent>
             <form
-              onSubmit={form.handleSubmit(onSubmit)}
+              onSubmit={form.handleSubmit(handleCreateOrganization)}
               className='flex flex-col gap-4'
             >
               <Label className='text-sm'>Nome</Label>
@@ -59,7 +80,7 @@ export default function CreateOrganizationPage() {
               <Input {...form.register('description')} /> */}
               <div className='grid'>
                 <Button type='submit' disabled={isSubmitting}>
-                  Criar
+                  {createOrganization.isPending ? 'Criando...' : 'Criar'}
                 </Button>
               </div>
             </form>

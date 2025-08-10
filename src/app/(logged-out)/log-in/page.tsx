@@ -19,14 +19,16 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
+import { api } from '@/lib/axios';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { AxiosError } from 'axios';
 import { Calendar1 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
-const formSchema = z.object({
+const loginSchema = z.object({
   email: z.email({ message: 'Digite um email válido' }),
   password: z
     .string()
@@ -35,16 +37,40 @@ const formSchema = z.object({
 
 export default function LogInPage() {
   const router = useRouter();
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
     defaultValues: {
       email: '',
       password: '',
     },
   });
 
-  function onSubmit(data: z.infer<typeof formSchema>) {
-    console.log(data);
+  async function handleLogin(data: z.infer<typeof loginSchema>) {
+    try {
+      const response = await api.post('/sessions', {
+        email: data.email,
+        password: data.password,
+      });
+
+      // Store the token in localStorage
+      const { access_token } = response.data;
+      if (access_token) {
+        localStorage.setItem('token', access_token);
+      }
+    } catch (err) {
+      if (err instanceof AxiosError && err?.response?.data?.message) {
+        form.setError('root', {
+          type: 'manual',
+          message: err.response.data.message,
+        });
+      } else {
+        form.setError('root', {
+          type: 'manual',
+          message: 'Erro ao fazer login. Tente novamente.',
+        });
+      }
+      return;
+    }
     router.push('/home');
   }
 
@@ -61,7 +87,7 @@ export default function LogInPage() {
         <CardContent>
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit(onSubmit)}
+              onSubmit={form.handleSubmit(handleLogin)}
               className='flex flex-col gap-4'
             >
               <FormField
@@ -93,6 +119,11 @@ export default function LogInPage() {
                   </FormItem>
                 )}
               />
+              {form.formState.errors.root && (
+                <div className='text-sm text-destructive text-center'>
+                  {form.formState.errors.root.message}
+                </div>
+              )}
               <Button type='submit'>Entrar</Button>
             </form>
           </Form>
