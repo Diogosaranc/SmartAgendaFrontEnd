@@ -1,5 +1,3 @@
-'use client';
-
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 
@@ -34,9 +32,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <QueryProvider>
-            {children}
-          </QueryProvider>
+          <QueryProvider>{children}</QueryProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -1,5 +1,5 @@
 import { api } from '../axios';
-import { mapUserToDTO, UserDTO } from './mapper/mappers';
+import { mapUserFromDTO, UserDTO } from './mapper/mappers';
 
 export interface User {
   id: string;
@@ -20,7 +20,7 @@ export async function getUsers(): Promise<User> {
     // Extract the users array from the response
     const data = response.data as { user: UserDTO };
 
-    return mapUserToDTO(data.user);
+    return mapUserFromDTO(data.user);
   } catch (error) {
     throw new Error(`Failed to fetch users: ${error}`);
   }

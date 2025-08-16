@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,25 +19,17 @@ import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus } from 'lucide-react';
-
-const servicos = [
-  {
-    id: '1',
-    name: 'Espaço pequeno',
-    description: 'Um espaço pequeno que suporta uma pessoa',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '2',
-    name: 'Espaço grande',
-    description: 'Um espaço grande que suporta três pessoas',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
+import {
+  useCreateSpaceOfService,
+  useGetSpaceOfServices,
+  useUpdateSpaceOfService,
+} from '@/hooks/use-space-of-service';
+import { SpaceOfService } from '@/lib/api/space-of-services';
+import { useParams } from 'next/navigation';
+import { toast } from 'sonner';
 
 const formspaceOfServiceSchema = z.object({
+  id: z.string().optional(),
   name: z.string().min(2).max(15),
   description: z.string().min(2).max(60),
   createdAt: z.date(),
@@ -56,10 +49,26 @@ export default function SpaceOfServicesPage() {
     useState<spaceOfService | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [loadedSpaceOfServices, setLoadedSpaceOfServices] = useState<
+    SpaceOfService[]
+  >([]);
+
+  const createSpaceOfService = useCreateSpaceOfService();
+  const updateSpaceOfService = useUpdateSpaceOfService();
+  const params = useParams();
+  const organizationId = params?.organizationId as string;
+  const { data: spaceOfServices } = useGetSpaceOfServices(organizationId);
+
+  useEffect(() => {
+    if (spaceOfServices) {
+      setLoadedSpaceOfServices(spaceOfServices);
+    }
+  }, [spaceOfServices]);
 
   const form = useForm<z.infer<typeof formspaceOfServiceSchema>>({
     resolver: zodResolver(formspaceOfServiceSchema),
     defaultValues: {
+      id: '',
       name: '',
       description: '',
       createdAt: new Date(),
@@ -67,7 +76,7 @@ export default function SpaceOfServicesPage() {
     },
   });
 
-  const { isSubmitting } = form.formState;
+  const { isSubmitting, errors } = form.formState;
 
   const handlespaceOfServiceChange = (value: string) => {
     if (value === 'new') {
@@ -82,15 +91,15 @@ export default function SpaceOfServicesPage() {
       return;
     }
 
-    const foundspaceOfService = servicos.find(
+    const foundspaceOfService = loadedSpaceOfServices.find(
       (servico) => servico.id.toString() === value
     );
     setSelectedspaceOfService({
       id: foundspaceOfService?.id || '',
       name: foundspaceOfService?.name || '',
       description: foundspaceOfService?.description || '',
-      createdAt: foundspaceOfService?.createdAt || new Date(),
-      updatedAt: foundspaceOfService?.updatedAt || new Date(),
+      createdAt: new Date(foundspaceOfService?.createdAt || new Date()),
+      updatedAt: new Date(foundspaceOfService?.updatedAt || new Date()),
     });
   };
 
@@ -104,11 +113,87 @@ export default function SpaceOfServicesPage() {
     });
   };
 
-  const onSubmit = (data: z.infer<typeof formspaceOfServiceSchema>) => {
-    form.reset({
-      updatedAt: new Date(),
-    });
-    console.log(data);
+  const handleCreateSpaceOfService = (
+    data: z.infer<typeof formspaceOfServiceSchema>
+  ) => {
+    if (organizationId) {
+      createSpaceOfService.mutate(
+        {
+          organizationId: organizationId,
+          name: data.name,
+          description: data.description,
+        },
+        {
+          onSuccess: () => {
+            setIsCreating(false);
+            setIsEditing(false);
+            toast('Serviço criado com sucesso', {
+              dismissible: true,
+              position: 'top-right',
+              description: 'Serviço criado com sucesso',
+              action: {
+                label: 'Fechar',
+                onClick: () => console.log('Fechar'),
+              },
+            });
+          },
+          onError: (error: any) => {
+            const status = error?.response?.status;
+            let message = 'Erro ao criar serviço.';
+
+            if (status === 409) {
+              message = 'Serviço já existe com este nome.';
+            } else if (error?.response?.data?.message) {
+              message = error.response.data.message;
+            }
+
+            toast.error('Erro ao criar serviço.', {
+              position: 'top-right',
+              description: message,
+              action: {
+                label: 'Fechar',
+                onClick: () => console.log('Fechar'),
+              },
+            });
+          },
+        }
+      );
+    }
+  };
+
+  const handleUpdateSpaceOfService = (
+    data: z.infer<typeof formspaceOfServiceSchema>
+  ) => {
+    if (selectedspaceOfService && organizationId) {
+      updateSpaceOfService.mutate(
+        {
+          organizationId: organizationId,
+          id: selectedspaceOfService?.id,
+          data: {
+            name: data.name,
+            description: data.description,
+          },
+        },
+        {
+          onSuccess: () => {
+            setIsCreating(false);
+            setIsEditing(false);
+          },
+          onError: (error: any) => {
+            form.setError('root', {
+              type: 'manual',
+              message:
+                error?.response?.data?.message || 'Erro ao criar serviço.',
+            });
+          },
+        }
+      );
+    } else {
+      form.setError('root', {
+        type: 'manual',
+        message: 'Erro ao criar serviço.',
+      });
+    }
   };
 
   const onCancel = () => {
@@ -128,13 +213,20 @@ export default function SpaceOfServicesPage() {
           <CardContent>
             {isEditing || isCreating ? (
               <form
-                onSubmit={form.handleSubmit(onSubmit)}
+                onSubmit={form.handleSubmit(
+                  isCreating
+                    ? handleCreateSpaceOfService
+                    : handleUpdateSpaceOfService
+                )}
                 className='flex flex-col gap-4'
               >
                 <Label className='text-sm'>Nome</Label>
                 <Input {...form.register('name')} />
                 <Label className='text-sm'>Descrição</Label>
                 <Input {...form.register('description')} />
+                {errors.root && (
+                  <p className='text-sm text-red-500'>{errors.root.message}</p>
+                )}
                 <div className='grid grid-cols-2 gap-4'>
                   <Button onClick={() => onCancel()}>Cancelar</Button>
                   <Button type='submit' disabled={isSubmitting}>
@@ -155,7 +247,7 @@ export default function SpaceOfServicesPage() {
                     <SelectItem value='new'>
                       <Plus /> Criar novo espaço
                     </SelectItem>
-                    {servicos.map((servico) => (
+                    {loadedSpaceOfServices.map((servico) => (
                       <SelectItem
                         key={servico.id}
                         value={servico.id.toString()}

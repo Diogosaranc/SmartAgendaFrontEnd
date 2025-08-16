@@ -8,6 +8,7 @@ import {
   SidebarInset,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { Toaster } from '@/components/ui/sonner';
 
 type Props = {
   children: React.ReactNode;
@@ -42,6 +43,7 @@ function LayoutContent({ children }: Props) {
           </h2>
           <div className='flex-1 overflow-auto w-full max-w-full'>
             {children}
+            <Toaster />
           </div>
         </div>
       </SidebarInset>

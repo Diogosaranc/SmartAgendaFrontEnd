@@ -46,6 +46,7 @@ export default function CreateOrganizationPage() {
           console.log('Organization created successfully!');
           router.push('/home');
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onError: (error: any) => {
           console.error('Error creating organization:', error);
           form.setError('root', {

@@ -41,7 +41,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import ThemeToggle from '@/components/ui/theme-toggle';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { usePathname } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
@@ -58,40 +58,7 @@ import type { Organization } from '@/lib/api/organizations';
 import { Skeleton } from './skeleton';
 import { getInitials } from '@/lib/get-initals';
 import { useGetUser } from '@/hooks/use-user';
-
-// Menu items.
-const items = [
-  {
-    title: 'Home',
-    url: '/home',
-    icon: Home,
-  },
-  {
-    title: 'Inbox',
-    url: '/inbox',
-    icon: Inbox,
-  },
-  {
-    title: 'Calendário',
-    url: '/calendar',
-    icon: CalendarDays,
-  },
-  {
-    title: 'Agendamento',
-    url: '/schedule',
-    icon: Calendar,
-  },
-  {
-    title: 'Serviços',
-    url: '/services',
-    icon: SquareChartGantt,
-  },
-  {
-    title: 'Espaço de Serviço',
-    url: '/space-of-service',
-    icon: Warehouse,
-  },
-];
+import { useEffect, useState } from 'react';
 
 type AppSidebarProps = {
   className?: string;
@@ -102,18 +69,63 @@ type AppSidebarProps = {
 
 export default function AppSidebar({ className }: AppSidebarProps) {
   const pathName = usePathname();
+  const params = useParams();
   const router = useRouter();
   const { data: organizations = [], isLoading } = useGetOrganizations();
   const { data: user } = useGetUser();
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    if (params?.organizationId) {
+      setSelectedOrganizationId(params.organizationId.toString());
+    }
+  }, [params?.organizationId]);
 
   const initials = getInitials(user?.name);
 
   const avatarUrl = 'https://github.com/xdiogoxd.png';
 
+  const items = [
+    {
+      title: 'Home',
+      url: '/home',
+      icon: Home,
+    },
+    {
+      title: 'Inbox',
+      url: `/organizations/${selectedOrganizationId}/inbox`,
+      icon: Inbox,
+    },
+    {
+      title: 'Calendário',
+      url: `/organizations/${selectedOrganizationId}/calendar`,
+      icon: CalendarDays,
+    },
+    {
+      title: 'Agendamento',
+      url: `/organizations/${selectedOrganizationId}/schedule`,
+      icon: Calendar,
+    },
+    {
+      title: 'Serviços',
+      url: `/organizations/${selectedOrganizationId}/services`,
+      icon: SquareChartGantt,
+    },
+    {
+      title: 'Espaço de Serviço',
+      url: `/organizations/${selectedOrganizationId}/space-of-service`,
+      icon: Warehouse,
+    },
+  ];
+
   const onChange = (value: string) => {
     if (value === 'new') {
       router.push('/new-organization');
     }
+    setSelectedOrganizationId(value);
+    router.push(`/organizations/${value}/inbox`);
   };
 
   return (

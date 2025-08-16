@@ -1,5 +1,5 @@
-import { api } from "../axios";
-import { mapOrganizationToDTO, OrganizationDTO } from "./mapper/mappers";
+import { api } from '../axios';
+import { mapOrganizationFromDTO, OrganizationDTO } from './mapper/mappers';
 
 export interface Organization {
   id: string;
@@ -27,14 +27,16 @@ export async function getOrganizations(): Promise<Organization[]> {
     // Extract the organizations array from the response
     const data = response.data as { organizations: OrganizationDTO[] };
 
-    return data.organizations.map(mapOrganizationToDTO) || [];
+    return data.organizations.map(mapOrganizationFromDTO) || [];
   } catch (error) {
     throw new Error(`Failed to fetch organizations: ${error}`);
   }
 }
 
 // Create new organization
-export async function createOrganization(data: CreateOrganizationData): Promise<Organization> {
+export async function createOrganization(
+  data: CreateOrganizationData
+): Promise<Organization> {
   try {
     const response = await api.post('/organizations', data);
     return response.data as Organization;
@@ -44,7 +46,10 @@ export async function createOrganization(data: CreateOrganizationData): Promise<
 }
 
 // Update organization
-export async function updateOrganization(id: string, data: UpdateOrganizationData): Promise<Organization> {
+export async function updateOrganization(
+  id: string,
+  data: UpdateOrganizationData
+): Promise<Organization> {
   try {
     const response = await api.put(`/organizations/${id}`, data);
     return response.data as Organization;

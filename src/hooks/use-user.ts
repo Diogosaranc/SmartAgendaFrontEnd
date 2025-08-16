@@ -6,5 +6,6 @@ export function useGetUser() {
     queryKey: ['users'],
     queryFn: getUsers,
     enabled: true,
+    staleTime: Infinity,
   });
 }
