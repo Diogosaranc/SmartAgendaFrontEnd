@@ -30,23 +30,15 @@ import { toast } from 'sonner';
 
 const formspaceOfServiceSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(2).max(15),
+  name: z.string().min(2).max(30),
   description: z.string().min(2).max(60),
   createdAt: z.date(),
-  updatedAt: z.date(),
+  updatedAt: z.date().nullable().optional(),
 });
-
-interface spaceOfService {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 export default function SpaceOfServicesPage() {
   const [selectedspaceOfService, setSelectedspaceOfService] =
-    useState<spaceOfService | null>(null);
+    useState<SpaceOfService | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [loadedSpaceOfServices, setLoadedSpaceOfServices] = useState<
@@ -76,7 +68,7 @@ export default function SpaceOfServicesPage() {
     },
   });
 
-  const { isSubmitting, errors } = form.formState;
+  const { isSubmitting } = form.formState;
 
   const handlespaceOfServiceChange = (value: string) => {
     if (value === 'new') {
@@ -94,13 +86,18 @@ export default function SpaceOfServicesPage() {
     const foundspaceOfService = loadedSpaceOfServices.find(
       (servico) => servico.id.toString() === value
     );
-    setSelectedspaceOfService({
-      id: foundspaceOfService?.id || '',
-      name: foundspaceOfService?.name || '',
-      description: foundspaceOfService?.description || '',
-      createdAt: new Date(foundspaceOfService?.createdAt || new Date()),
-      updatedAt: new Date(foundspaceOfService?.updatedAt || new Date()),
-    });
+
+    if (foundspaceOfService) {
+      setSelectedspaceOfService({
+        id: foundspaceOfService.id,
+        name: foundspaceOfService.name,
+        description: foundspaceOfService.description,
+        createdAt: new Date(foundspaceOfService.createdAt),
+        updatedAt: foundspaceOfService.updatedAt
+          ? new Date(foundspaceOfService.updatedAt)
+          : null,
+      });
+    }
   };
 
   const handlespaceOfServiceEdit = () => {
@@ -127,7 +124,7 @@ export default function SpaceOfServicesPage() {
           onSuccess: () => {
             setIsCreating(false);
             setIsEditing(false);
-            toast('Serviço criado com sucesso', {
+            toast('Espaço de Serviço criado com sucesso', {
               dismissible: true,
               position: 'top-right',
               description: 'Serviço criado com sucesso',
@@ -139,15 +136,15 @@ export default function SpaceOfServicesPage() {
           },
           onError: (error: any) => {
             const status = error?.response?.status;
-            let message = 'Erro ao criar serviço.';
+            let message = 'Erro ao criar espaço de serviço.';
 
             if (status === 409) {
-              message = 'Serviço já existe com este nome.';
+              message = 'Espaço de Serviço já existe com este nome.';
             } else if (error?.response?.data?.message) {
               message = error.response.data.message;
             }
 
-            toast.error('Erro ao criar serviço.', {
+            toast.error(message, {
               position: 'top-right',
               description: message,
               action: {
@@ -176,14 +173,20 @@ export default function SpaceOfServicesPage() {
         },
         {
           onSuccess: () => {
-            setIsCreating(false);
             setIsEditing(false);
+            form.reset({
+              name: data.name,
+              description: data.description,
+              createdAt: selectedspaceOfService.createdAt,
+              updatedAt: new Date(),
+            });
           },
           onError: (error: any) => {
             form.setError('root', {
               type: 'manual',
               message:
-                error?.response?.data?.message || 'Erro ao criar serviço.',
+                error?.response?.data?.message ||
+                'Erro ao criar espaço de serviço.',
             });
           },
         }
@@ -191,7 +194,7 @@ export default function SpaceOfServicesPage() {
     } else {
       form.setError('root', {
         type: 'manual',
-        message: 'Erro ao criar serviço.',
+        message: 'Erro ao criar espaço de serviço.',
       });
     }
   };
@@ -224,8 +227,17 @@ export default function SpaceOfServicesPage() {
                 <Input {...form.register('name')} />
                 <Label className='text-sm'>Descrição</Label>
                 <Input {...form.register('description')} />
-                {errors.root && (
-                  <p className='text-sm text-red-500'>{errors.root.message}</p>
+                {Object.keys(form.formState.errors).length > 0 && (
+                  <div className='text-red-500 text-sm'>
+                    <p>Form errors:</p>
+                    {Object.entries(form.formState.errors).map(
+                      ([key, error]) => (
+                        <p key={key}>
+                          {key}: {error?.message}
+                        </p>
+                      )
+                    )}
+                  </div>
                 )}
                 <div className='grid grid-cols-2 gap-4'>
                   <Button onClick={() => onCancel()}>Cancelar</Button>
@@ -241,7 +253,7 @@ export default function SpaceOfServicesPage() {
                   defaultValue={selectedspaceOfService?.id.toString()}
                 >
                   <SelectTrigger className='w-full'>
-                    <SelectValue placeholder='Selecione um serviço' />
+                    <SelectValue placeholder='Selecione um espaço serviço' />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value='new'>
@@ -269,9 +281,11 @@ export default function SpaceOfServicesPage() {
                   Criado em:{' '}
                   {selectedspaceOfService ? (
                     <p className='text-xs'>
-                      {selectedspaceOfService.createdAt.toLocaleDateString(
-                        'pt-BR'
-                      )}
+                      {selectedspaceOfService.createdAt
+                        ? selectedspaceOfService.createdAt.toLocaleDateString(
+                            'pt-BR'
+                          )
+                        : ''}
                     </p>
                   ) : (
                     <Skeleton className='h-4 w-[78%] ml-auto' />
@@ -281,14 +295,17 @@ export default function SpaceOfServicesPage() {
                   Atualizado em:{' '}
                   {selectedspaceOfService ? (
                     <p className='text-xs'>
-                      {selectedspaceOfService.updatedAt.toLocaleDateString(
-                        'pt-BR'
-                      )}
+                      {selectedspaceOfService.updatedAt
+                        ? selectedspaceOfService.updatedAt.toLocaleDateString(
+                            'pt-BR'
+                          )
+                        : 'Nunca'}
                     </p>
                   ) : (
                     <Skeleton className='h-4 w-[70%] ml-auto' />
                   )}
                 </Label>
+
                 {selectedspaceOfService && (
                   <div className='grid gap-4'>
                     <Button

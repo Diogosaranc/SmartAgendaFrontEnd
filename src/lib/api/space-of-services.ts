@@ -1,12 +1,12 @@
 import { api } from '../axios';
 
 export interface SpaceOfService {
-  id: string;
   organizationId?: string;
+  id: string;
   name: string;
   description: string;
-  createdAt: string;
-  updatedAt?: string | null;
+  createdAt: Date;
+  updatedAt?: Date | null;
 }
 
 export interface CreateSpaceOfServiceData {
@@ -86,11 +86,11 @@ export async function updateSpaceOfService(
   data: UpdateSpaceOfServiceData
 ): Promise<SpaceOfService> {
   try {
-    const response = await api.put(
-      `organizations/${organizationId}/spaceofservices/${id}`,
+    const response = await api.patch(
+      `organizations/${organizationId}/spaceofservices/id/${id}`,
       data
     );
-    return response.data as SpaceOfService;
+    return response.data.spaceOfService as SpaceOfService;
   } catch (error) {
     throw new Error(`Failed to update spaceofservice: ${error}`);
   }

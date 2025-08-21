@@ -1,5 +1,4 @@
 import { api } from '../axios';
-import { mapOrganizationFromDTO, OrganizationDTO } from './mapper/mappers';
 
 export interface Organization {
   id: string;
@@ -25,9 +24,9 @@ export async function getOrganizations(): Promise<Organization[]> {
   try {
     const response = await api.get('/organizations');
     // Extract the organizations array from the response
-    const data = response.data as { organizations: OrganizationDTO[] };
+    const data = response.data as { organizations: Organization[] };
 
-    return data.organizations.map(mapOrganizationFromDTO) || [];
+    return data.organizations || [];
   } catch (error) {
     throw new Error(`Failed to fetch organizations: ${error}`);
   }
