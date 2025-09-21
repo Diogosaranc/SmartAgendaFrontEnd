@@ -7,6 +7,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { ptBR } from 'react-day-picker/locale';
 import { Card, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { set } from 'date-fns';
 
 const schedules = [
   { time: '08:00', available: true },
@@ -34,8 +35,6 @@ const schedules = [
 interface ScheduleCalendarProps {
   date: Date | undefined;
   setDate: (date: Date | undefined) => void;
-  time: string;
-  setTime: (time: string) => void;
   available: boolean;
   setAvailable: (available: boolean) => void;
 }
@@ -43,11 +42,10 @@ interface ScheduleCalendarProps {
 export default function ScheduleCalendar({
   date,
   setDate,
-  time,
-  setTime,
   setAvailable,
 }: ScheduleCalendarProps) {
   const [hasSelectedDate, setHasSelectedDate] = useState(false);
+  const [time, setTime] = useState('');
   const cardRef = useRef<HTMLDivElement>(null);
   const agendaRef = useRef<HTMLDivElement>(null);
 
@@ -89,7 +87,11 @@ export default function ScheduleCalendar({
 
   const onSelectTime = (time: string) => {
     setTime(time);
+    const hours = parseInt(time.split(':')[0], 10);
+    const minutes = parseInt(time.split(':')[1], 10);
+    const newDate = set(date!, { hours, minutes });
     setAvailable(isAvailable());
+    setDate(newDate);
   };
 
   const isAvailable = (): boolean => {

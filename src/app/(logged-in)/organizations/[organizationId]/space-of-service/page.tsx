@@ -180,6 +180,25 @@ export default function SpaceOfServicesPage() {
               createdAt: selectedspaceOfService.createdAt,
               updatedAt: new Date(),
             });
+            setLoadedSpaceOfServices((prev) =>
+              prev.map((servico) =>
+                servico.id === selectedspaceOfService.id
+                  ? {
+                      ...servico,
+                      name: data.name,
+                      description: data.description,
+                      updatedAt: new Date(),
+                    }
+                  : servico
+              )
+            );
+            setSelectedspaceOfService({
+              id: selectedspaceOfService.id,
+              name: data.name,
+              description: data.description,
+              createdAt: selectedspaceOfService.createdAt,
+              updatedAt: new Date(),
+            });
           },
           onError: (error: any) => {
             form.setError('root', {

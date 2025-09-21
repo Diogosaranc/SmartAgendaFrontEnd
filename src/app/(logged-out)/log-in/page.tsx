@@ -130,7 +130,7 @@ export default function LogInPage() {
         </CardContent>
         <CardFooter className='justify-between'>
           <small>Não tem uma conta?</small>
-          <Button size='sm'>
+          <Button size='sm' className='cursor-pointer'>
             <Link href='/sign-up' className='--color-foreground font-semibold'>
               Registrar
             </Link>

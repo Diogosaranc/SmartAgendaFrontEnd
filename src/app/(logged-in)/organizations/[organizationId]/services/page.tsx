@@ -202,8 +202,6 @@ export default function ServicesPage() {
           },
         }
       );
-    } else {
-      console.error('Organization ID is missing!');
     }
   };
 
@@ -245,6 +243,31 @@ export default function ServicesPage() {
               createdAt: selectedService.createdAt,
               updatedAt: new Date(),
             });
+            setSelectedService({
+              id: selectedService.id,
+              name: data.name,
+              description: data.description,
+              price: data.price,
+              duration: data.duration,
+              observations: data.observations,
+              createdAt: selectedService.createdAt,
+              updatedAt: new Date(),
+            });
+            setLoadedServices((prevServices) =>
+              prevServices.map((servico) =>
+                servico.id === selectedService.id
+                  ? {
+                      ...servico,
+                      name: data.name,
+                      description: data.description,
+                      price: data.price,
+                      duration: data.duration,
+                      observations: data.observations,
+                      updatedAt: new Date(),
+                    }
+                  : servico
+              )
+            );
             toast('Serviço atualizado com sucesso', {
               dismissible: true,
               position: 'top-right',
@@ -277,8 +300,6 @@ export default function ServicesPage() {
           },
         }
       );
-    } else {
-      console.error('Organization ID is missing!');
     }
   };
 

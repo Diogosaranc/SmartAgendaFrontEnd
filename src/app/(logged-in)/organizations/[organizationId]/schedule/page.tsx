@@ -18,22 +18,80 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { MultiStep } from '@/components/ui/MultiStep';
 import ScheduleCalendar from '@/components/ui/ScheduleCalendar';
+import { SpaceOfService } from '@/lib/api/space-of-services';
+import { Service } from '@/lib/api/services';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { useGetSpaceOfServices } from '@/hooks/use-space-of-service';
+import { useGetServices } from '@/hooks/use-services';
+import { useParams } from 'next/navigation';
+import { useCreateAppointment } from '@/hooks/use-appointments';
+import { Controller, useForm, UseFormReturn } from 'react-hook-form';
+import z from 'zod';
+import { toast } from 'sonner';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const formAppointmentSchema = z.object({
+  service: z.string().min(1, 'Serviço é obrigatório'),
+  spaceOfService: z.string().min(1, 'Espaço de serviço é obrigatório'),
+  client: z.string().min(1, 'Cliente é obrigatório'),
+  date: z.date().min(new Date(), 'Data é obrigatória'),
+  description: z.string().optional(),
+});
 
 export default function SchedulePage() {
   const [available, setAvailable] = useState(true);
   const [currentStep, setCurrentStep] = useState(1);
+  const createAppointment = useCreateAppointment();
 
-  const [formData, setFormData] = useState({
-    service: '',
-    spaceOfService: '',
-    client: '',
-    date: '',
-    time: '',
-    notes: '',
+  const form = useForm<z.infer<typeof formAppointmentSchema>>({
+    resolver: zodResolver(formAppointmentSchema),
+    defaultValues: {
+      service: '',
+      spaceOfService: '',
+      client: '',
+      date: new Date(),
+      description: '',
+    },
   });
 
   const steps = 3;
 
+  const params = useParams();
+  const organizationId = params?.organizationId as string;
+
+  const handleCreateAppointment = () => {
+    if (organizationId) {
+      createAppointment.mutate(
+        {
+          organizationId,
+          data: {
+            date: form.getValues('date'),
+            description: form.getValues('description')
+              ? form.getValues('description')
+              : '',
+            serviceId: form.getValues('service'),
+            spaceOfServiceId: form.getValues('spaceOfService'),
+            clientId: form.getValues('client'),
+          },
+        },
+        {
+          onSuccess: () => {
+            form.reset();
+            toast('Serviço criado com sucesso', {
+              dismissible: true,
+              position: 'top-right',
+              description: 'Serviço criado com sucesso',
+              action: {
+                label: 'Fechar',
+                onClick: () => console.log('Fechar'),
+              },
+            });
+          },
+        }
+      );
+    }
+  };
   return (
     <Card className='max-w-xl mx-auto mt-0'>
       <CardHeader className='text-center'>
@@ -42,20 +100,15 @@ export default function SchedulePage() {
       <CardContent className='space-y-4'>
         <MultiStep size={steps} currentStep={currentStep} />
         <Separator className='my-4' />
-        {currentStep === 1 && (
-          <StepOne formData={formData} setFormData={setFormData} />
-        )}
+        {currentStep === 1 && <StepOne form={form} />}
         {currentStep === 2 && (
           <StepTwo
-            formData={formData}
-            setFormData={setFormData}
+            form={form}
             available={available}
             setAvailable={setAvailable}
           />
         )}
-        {currentStep === 3 && (
-          <StepThree formData={formData} setFormData={setFormData} />
-        )}
+        {currentStep === 3 && <StepThree form={form} />}
 
         <div className='flex gap-2'>
           {currentStep > 1 && (
@@ -77,7 +130,11 @@ export default function SchedulePage() {
               Próximo
             </Button>
           ) : (
-            <Button className='flex-1' variant='default'>
+            <Button
+              className='flex-1'
+              variant='default'
+              onClick={handleCreateAppointment}
+            >
               Agendar
             </Button>
           )}
@@ -88,89 +145,122 @@ export default function SchedulePage() {
 }
 
 interface StepProps {
-  formData: {
+  form: UseFormReturn<{
     service: string;
     spaceOfService: string;
     client: string;
-    date: string;
-    time: string;
-    notes: string;
-  };
-  setFormData: (data: StepProps['formData']) => void;
+    date: Date;
+    description?: string;
+  }>;
   available?: boolean;
   setAvailable?: (available: boolean) => void;
 }
 
-function StepOne({ formData, setFormData }: StepProps) {
+function StepOne({ form }: StepProps) {
+  const [loadedSpaceOfServices, setLoadedSpaceOfServices] = useState<
+    SpaceOfService[]
+  >([]);
+  const [loadedServices, setLoadedServices] = useState<Service[]>([]);
+
+  const params = useParams();
+  const organizationId = params?.organizationId as string;
+
+  const { data: spaceOfServices } = useGetSpaceOfServices(organizationId);
+  const { data: services } = useGetServices(organizationId);
+
+  useEffect(() => {
+    if (spaceOfServices) {
+      setLoadedSpaceOfServices(spaceOfServices);
+    }
+  }, [spaceOfServices]);
+
+  useEffect(() => {
+    if (services) {
+      setLoadedServices(services);
+    }
+  }, [services]);
   return (
     <>
       <Label htmlFor='service'>Serviço</Label>
-      <Select
-        value={formData.service}
-        onValueChange={(value) => setFormData({ ...formData, service: value })}
-      >
-        <SelectTrigger className='w-full'>
-          <SelectValue placeholder='Selecione um serviço' />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value='service1'>Serviço 1</SelectItem>
-          <SelectItem value='service2'>Serviço 2</SelectItem>
-          <SelectItem value='service3'>Serviço 3</SelectItem>
-        </SelectContent>
-      </Select>
+      <Controller
+        control={form.control}
+        name='service'
+        render={({ field }) => (
+          <Select value={field.value} onValueChange={field.onChange}>
+            <SelectTrigger className='w-full'>
+              <SelectValue placeholder='Selecione um serviço' />
+            </SelectTrigger>
+            <SelectContent>
+              {loadedServices
+                ? loadedServices.map((service) => (
+                    <SelectItem key={service.id} value={service.id}>
+                      {service.name}
+                    </SelectItem>
+                  ))
+                : null}
+            </SelectContent>
+          </Select>
+        )}
+      />
       <Label htmlFor='spaceOfService'>Espaço de serviço</Label>
-      <Select
-        value={formData.spaceOfService}
-        onValueChange={(value) =>
-          setFormData({ ...formData, spaceOfService: value })
-        }
-      >
-        <SelectTrigger className='w-full'>
-          <SelectValue placeholder='Selecione um espaço' />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value='space1'>Espaço serviço 1</SelectItem>
-          <SelectItem value='space2'>Espaço serviço 2</SelectItem>
-          <SelectItem value='space3'>Espaço serviço 3</SelectItem>
-        </SelectContent>
-      </Select>
+      <Controller
+        control={form.control}
+        name='spaceOfService'
+        render={({ field }) => (
+          <Select value={field.value} onValueChange={field.onChange}>
+            <SelectTrigger className='w-full'>
+              <SelectValue placeholder='Selecione um espaço' />
+            </SelectTrigger>
+            <SelectContent>
+              {loadedSpaceOfServices
+                ? loadedSpaceOfServices.map((space) => (
+                    <SelectItem key={space.id} value={space.id}>
+                      {space.name}
+                    </SelectItem>
+                  ))
+                : null}
+            </SelectContent>
+          </Select>
+        )}
+      />
       <Label htmlFor='client'>Cliente</Label>
-      <Input
-        type='text'
-        id='client'
-        value={formData.client}
-        onChange={(e) => setFormData({ ...formData, client: e.target.value })}
-        placeholder='Nome do cliente'
-        className='w-full'
+      <Controller
+        control={form.control}
+        name='client'
+        render={({ field }) => (
+          <Input
+            type='text'
+            id='client'
+            value={field.value}
+            onChange={field.onChange}
+          />
+        )}
       />
       <Label htmlFor='notes'>Observações</Label>
-      <Textarea
-        id='notes'
-        value={formData.notes}
-        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-        className='w-full'
+      <Controller
+        control={form.control}
+        name='description'
+        render={({ field }) => (
+          <Textarea
+            id='notes'
+            value={field.value}
+            onChange={field.onChange}
+            className='w-full'
+          />
+        )}
       />
     </>
   );
 }
 
-function StepTwo({
-  formData,
-  setFormData,
-  available,
-  setAvailable,
-}: StepProps) {
+function StepTwo({ form, available, setAvailable }: StepProps) {
   const [date, setDate] = useState<Date | undefined>(undefined);
-  const [time, setTime] = useState<string>('');
 
   useEffect(() => {
-    if (date && time) {
-      const updatedData = formData;
-      updatedData.date = date.toISOString();
-      updatedData.time = time;
-      setFormData(updatedData);
+    if (date) {
+      form.setValue('date', date);
     }
-  }, [date, time, formData, setFormData]);
+  }, [date, form]);
 
   return (
     <>
@@ -181,8 +271,6 @@ function StepTwo({
         <ScheduleCalendar
           date={date}
           setDate={setDate}
-          time={time}
-          setTime={setTime}
           available={available!}
           setAvailable={setAvailable!}
         />
@@ -191,27 +279,23 @@ function StepTwo({
   );
 }
 
-interface StepThreeProps extends StepProps {
-  formData: {
-    service: string;
-    spaceOfService: string;
-    client: string;
-    date: string;
-    time: string;
-    notes: string;
-  };
-}
-
-function StepThree({ formData }: StepThreeProps) {
+function StepThree({ form }: StepProps) {
+  const dateObj = form.getValues('date') ? form.getValues('date') : null;
+  const formattedDate = dateObj
+    ? format(dateObj, 'dd/MM/yyyy', { locale: ptBR })
+    : '';
+  const formattedTime = dateObj
+    ? format(dateObj, 'HH:mm', { locale: ptBR })
+    : '';
   return (
     <>
       <Label htmlFor='description'>Resumo</Label>
-      <Label> Servico: {formData.service}</Label>
-      <Label> Espaço de Serviço: {formData.spaceOfService}</Label>
-      <Label> Cliente: {formData.client}</Label>
-      <Label> Data: {formData.date}</Label>
-      <Label> Horário: {formData.time}</Label>
-      <Label> Observações: {formData.notes}</Label>
+      <Label> Servico: {form.getValues('service')}</Label>
+      <Label> Espaço de Serviço: {form.getValues('spaceOfService')}</Label>
+      <Label> Cliente: {form.getValues('client')}</Label>
+      <Label> Data: {formattedDate}</Label>
+      <Label> Horário: {formattedTime}</Label>
+      <Label> Observações: {form.getValues('description')}</Label>
     </>
   );
 }

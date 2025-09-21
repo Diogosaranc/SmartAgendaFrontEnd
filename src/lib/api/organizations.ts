@@ -3,8 +3,8 @@ import { api } from '../axios';
 export interface Organization {
   id: string;
   name: string;
-  createdAt: string;
-  updatedAt: string | null;
+  createdAt: Date;
+  updatedAt: Date | null;
   members: unknown[];
   ownerId: string;
 }
