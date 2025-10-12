@@ -15,6 +15,7 @@ import {
   Warehouse,
   Building,
   Plus,
+  Contact,
 } from 'lucide-react';
 
 import {
@@ -104,6 +105,11 @@ export default function AppSidebar({ className }: AppSidebarProps) {
       icon: CalendarDays,
     },
     {
+      title: 'Contatos',
+      url: `/organizations/${selectedOrganizationId}/contacts`,
+      icon: Contact,
+    },
+    {
       title: 'Agendamento',
       url: `/organizations/${selectedOrganizationId}/schedule`,
       icon: Calendar,
@@ -123,9 +129,17 @@ export default function AppSidebar({ className }: AppSidebarProps) {
   const onChange = (value: string) => {
     if (value === 'new') {
       router.push('/new-organization');
+    } else {
+      setSelectedOrganizationId(value);
+      router.push(`/organizations/${value}/inbox`);
     }
-    setSelectedOrganizationId(value);
-    router.push(`/organizations/${value}/inbox`);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+
+    router.push('/log-in');
   };
 
   return (
@@ -145,7 +159,7 @@ export default function AppSidebar({ className }: AppSidebarProps) {
           </SidebarMenuItem>
         </SidebarMenu>
         <SidebarSeparator className='mx-0 w-full' />
-        <Select onValueChange={onChange}>
+        <Select onValueChange={onChange} value={selectedOrganizationId || ''}>
           <SelectTrigger className='w-full cursor-pointer'>
             <SelectValue placeholder='Organizações' />
           </SelectTrigger>
@@ -311,11 +325,9 @@ export default function AppSidebar({ className }: AppSidebarProps) {
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <Link href='/' className='flex items-center gap-2 w-full'>
-                      <LogOut />
-                      Log out
-                    </Link>
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut />
+                    Log out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </nav>

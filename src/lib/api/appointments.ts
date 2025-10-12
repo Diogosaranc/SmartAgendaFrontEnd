@@ -20,7 +20,7 @@ export interface Appointment {
   organizationId: string;
   serviceId: string;
   spaceOfServiceId: string;
-  clientId: string;
+  customerPhone: string;
 }
 
 export interface CreateAppointmentData {
@@ -28,7 +28,7 @@ export interface CreateAppointmentData {
   description?: string;
   serviceId: string;
   spaceOfServiceId: string;
-  clientId: string;
+  customerPhone: string;
 }
 
 export interface UpdateAppointmentData {
@@ -36,7 +36,7 @@ export interface UpdateAppointmentData {
   organizationId?: string;
   serviceId?: string;
   spaceOfServiceId?: string;
-  clientId?: string;
+  customerId?: string;
 }
 
 export interface RescheduleAppointmentsData {

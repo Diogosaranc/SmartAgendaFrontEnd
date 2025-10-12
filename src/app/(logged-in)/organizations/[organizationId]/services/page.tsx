@@ -25,8 +25,8 @@ import {
   useGetServices,
   useUpdateService,
 } from '@/hooks/use-services';
-import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
+import { useOrganizationId } from '@/hooks/use-organization-id';
 
 //implement image support
 
@@ -83,8 +83,7 @@ export default function ServicesPage() {
 
   const createService = useCreateService();
   const updateService = useUpdateService();
-  const params = useParams();
-  const organizationId = params?.organizationId as string;
+  const organizationId = useOrganizationId();
   const { data: servicos } = useGetServices(organizationId);
 
   useEffect(() => {

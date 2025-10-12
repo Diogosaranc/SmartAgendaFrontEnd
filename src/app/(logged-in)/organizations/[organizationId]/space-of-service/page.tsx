@@ -25,8 +25,8 @@ import {
   useUpdateSpaceOfService,
 } from '@/hooks/use-space-of-service';
 import { SpaceOfService } from '@/lib/api/space-of-services';
-import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
+import { useOrganizationId } from '@/hooks/use-organization-id';
 
 const formspaceOfServiceSchema = z.object({
   id: z.string().optional(),
@@ -47,8 +47,7 @@ export default function SpaceOfServicesPage() {
 
   const createSpaceOfService = useCreateSpaceOfService();
   const updateSpaceOfService = useUpdateSpaceOfService();
-  const params = useParams();
-  const organizationId = params?.organizationId as string;
+  const organizationId = useOrganizationId();
   const { data: spaceOfServices } = useGetSpaceOfServices(organizationId);
 
   useEffect(() => {

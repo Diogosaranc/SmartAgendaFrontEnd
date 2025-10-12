@@ -90,6 +90,7 @@ export default function ScheduleCalendar({
     const hours = parseInt(time.split(':')[0], 10);
     const minutes = parseInt(time.split(':')[1], 10);
     const newDate = set(date!, { hours, minutes });
+    console.log('New date selected:', newDate);
     setAvailable(isAvailable());
     setDate(newDate);
   };

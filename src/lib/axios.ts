@@ -15,3 +15,22 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Response interceptor to handle 401 errors
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      // Clear auth data
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+
+      // Redirect to login
+      window.location.href = '/log-in';
+    }
+
+    return Promise.reject(error);
+  }
+);

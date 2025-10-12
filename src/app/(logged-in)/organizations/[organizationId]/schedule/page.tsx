@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -24,17 +25,21 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useGetSpaceOfServices } from '@/hooks/use-space-of-service';
 import { useGetServices } from '@/hooks/use-services';
-import { useParams } from 'next/navigation';
 import { useCreateAppointment } from '@/hooks/use-appointments';
 import { Controller, useForm, UseFormReturn } from 'react-hook-form';
 import z from 'zod';
 import { toast } from 'sonner';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useOrganizationId } from '@/hooks/use-organization-id';
+import SelectContact from './components/SelectContact';
+import { Contact } from 'lucide-react';
+import { Customer } from '@/lib/api/customers';
 
 const formAppointmentSchema = z.object({
   service: z.string().min(1, 'Serviço é obrigatório'),
   spaceOfService: z.string().min(1, 'Espaço de serviço é obrigatório'),
-  client: z.string().min(1, 'Cliente é obrigatório'),
+  customerPhone: z.string().min(8, 'Cliente é obrigatório'),
+  customerLabel: z.string().optional(),
   date: z.date().min(new Date(), 'Data é obrigatória'),
   description: z.string().optional(),
 });
@@ -49,7 +54,8 @@ export default function SchedulePage() {
     defaultValues: {
       service: '',
       spaceOfService: '',
-      client: '',
+      customerPhone: '',
+      customerLabel: '',
       date: new Date(),
       description: '',
     },
@@ -57,8 +63,7 @@ export default function SchedulePage() {
 
   const steps = 3;
 
-  const params = useParams();
-  const organizationId = params?.organizationId as string;
+  const organizationId = useOrganizationId();
 
   const handleCreateAppointment = () => {
     if (organizationId) {
@@ -72,16 +77,16 @@ export default function SchedulePage() {
               : '',
             serviceId: form.getValues('service'),
             spaceOfServiceId: form.getValues('spaceOfService'),
-            clientId: form.getValues('client'),
+            customerPhone: form.getValues('customerPhone'),
           },
         },
         {
           onSuccess: () => {
             form.reset();
-            toast('Serviço criado com sucesso', {
+            toast('Agenda criada com sucesso', {
               dismissible: true,
               position: 'top-right',
-              description: 'Serviço criado com sucesso',
+              description: 'Agenda criada com sucesso',
               action: {
                 label: 'Fechar',
                 onClick: () => console.log('Fechar'),
@@ -148,7 +153,8 @@ interface StepProps {
   form: UseFormReturn<{
     service: string;
     spaceOfService: string;
-    client: string;
+    customerPhone: string;
+    customerLabel?: string;
     date: Date;
     description?: string;
   }>;
@@ -162,11 +168,15 @@ function StepOne({ form }: StepProps) {
   >([]);
   const [loadedServices, setLoadedServices] = useState<Service[]>([]);
 
-  const params = useParams();
-  const organizationId = params?.organizationId as string;
+  const organizationId = useOrganizationId();
 
   const { data: spaceOfServices } = useGetSpaceOfServices(organizationId);
   const { data: services } = useGetServices(organizationId);
+
+  const onSelectCustomer = (customer: Customer) => {
+    form.setValue('customerPhone', customer.phone);
+    form.setValue('customerLabel', customer.name + ' - ' + customer.phone);
+  };
 
   useEffect(() => {
     if (spaceOfServices) {
@@ -223,19 +233,31 @@ function StepOne({ form }: StepProps) {
           </Select>
         )}
       />
-      <Label htmlFor='client'>Cliente</Label>
-      <Controller
-        control={form.control}
-        name='client'
-        render={({ field }) => (
-          <Input
-            type='text'
-            id='client'
-            value={field.value}
-            onChange={field.onChange}
-          />
-        )}
-      />
+      <Label htmlFor='customer'>Cliente</Label>
+      <div className='flex gap-2'>
+        <Controller
+          control={form.control}
+          name='customerLabel'
+          render={({ field }) => (
+            <Input
+              type='text'
+              id='customerLabel'
+              value={field.value}
+              onChange={field.onChange}
+              className='flex-1'
+              disabled
+            />
+          )}
+        />
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant='outline' type='button'>
+              <Contact />
+            </Button>
+          </DialogTrigger>
+          <SelectContact onSelect={onSelectCustomer} />
+        </Dialog>
+      </div>
       <Label htmlFor='notes'>Observações</Label>
       <Controller
         control={form.control}
@@ -287,12 +309,24 @@ function StepThree({ form }: StepProps) {
   const formattedTime = dateObj
     ? format(dateObj, 'HH:mm', { locale: ptBR })
     : '';
+
+  const organizationId = useOrganizationId();
+
+  const { data: spaceOfServices } = useGetSpaceOfServices(organizationId);
+  const { data: services } = useGetServices(organizationId);
+
+  const selectedService = services?.find(
+    (service) => service.id === form.getValues('service')
+  );
+  const selectedSpaceOfService = spaceOfServices?.find(
+    (space) => space.id === form.getValues('spaceOfService')
+  );
   return (
     <>
       <Label htmlFor='description'>Resumo</Label>
-      <Label> Servico: {form.getValues('service')}</Label>
-      <Label> Espaço de Serviço: {form.getValues('spaceOfService')}</Label>
-      <Label> Cliente: {form.getValues('client')}</Label>
+      <Label> Servico: {selectedService?.name}</Label>
+      <Label> Espaço de Serviço: {selectedSpaceOfService?.name}</Label>
+      <Label> Cliente: {form.getValues('customerLabel')}</Label>
       <Label> Data: {formattedDate}</Label>
       <Label> Horário: {formattedTime}</Label>
       <Label> Observações: {form.getValues('description')}</Label>

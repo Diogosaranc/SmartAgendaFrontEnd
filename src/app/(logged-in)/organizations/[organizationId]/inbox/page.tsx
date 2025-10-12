@@ -3,8 +3,11 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import MyInbox from './components/MyInbox';
 import TeamInbox from './components/TeamInbox';
+// import { useOrganizationId } from '@/hooks/use-organization-id';
 
 export default function InboxPage() {
+  // const organizationId = useOrganizationId();
+
   return (
     <div className='h-full flex flex-col'>
       <Tabs

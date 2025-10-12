@@ -9,6 +9,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Toaster } from '@/components/ui/sonner';
+import { useEffect, useState } from 'react';
 
 type Props = {
   children: React.ReactNode;
@@ -16,14 +17,18 @@ type Props = {
 
 function LayoutContent({ children }: Props) {
   const { isMobile } = useSidebar();
+  const [formattedDate, setFormattedDate] = useState('');
 
-  const date = new Date();
-  const formattedDate = date.toLocaleDateString('pt-BR', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  useEffect(() => {
+    const date = new Date();
+    const formatted = date.toLocaleDateString('pt-BR', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+    setFormattedDate(formatted);
+  }, []);
 
   return (
     <>
