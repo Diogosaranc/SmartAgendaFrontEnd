@@ -34,6 +34,7 @@ import { useOrganizationId } from '@/hooks/use-organization-id';
 import SelectContact from './components/SelectContact';
 import { Contact } from 'lucide-react';
 import { Customer } from '@/lib/api/customers';
+import { useSearchParams } from 'next/navigation';
 
 const formAppointmentSchema = z.object({
   service: z.string().min(1, 'Serviço é obrigatório'),
@@ -47,6 +48,7 @@ const formAppointmentSchema = z.object({
 export default function SchedulePage() {
   const [available, setAvailable] = useState(true);
   const [currentStep, setCurrentStep] = useState(1);
+  const [allowNextStep, setAllowNextStep] = useState(false);
   const createAppointment = useCreateAppointment();
 
   const form = useForm<z.infer<typeof formAppointmentSchema>>({
@@ -60,6 +62,21 @@ export default function SchedulePage() {
       description: '',
     },
   });
+  const formValues = form.watch(); // Watch all form values
+
+  useEffect(() => {
+    if (currentStep === 1) {
+      setAllowNextStep(
+        formValues.service !== '' &&
+          formValues.spaceOfService !== '' &&
+          formValues.customerPhone !== ''
+      );
+    } else if (currentStep === 2) {
+      setAllowNextStep(available);
+    } else {
+      setAllowNextStep(true);
+    }
+  }, [currentStep, available, formValues]);
 
   const steps = 3;
 
@@ -83,6 +100,7 @@ export default function SchedulePage() {
         {
           onSuccess: () => {
             form.reset();
+            setCurrentStep(1);
             toast('Agenda criada com sucesso', {
               dismissible: true,
               position: 'top-right',
@@ -130,7 +148,7 @@ export default function SchedulePage() {
               onClick={() => {
                 setCurrentStep(currentStep + 1);
               }}
-              disabled={currentStep === 2 && available}
+              disabled={!allowNextStep}
             >
               Próximo
             </Button>
@@ -278,6 +296,19 @@ function StepOne({ form }: StepProps) {
 function StepTwo({ form, available, setAvailable }: StepProps) {
   const [date, setDate] = useState<Date | undefined>(undefined);
 
+  const searchParams = useSearchParams();
+  const paramsdate = searchParams.get('date');
+  const paramstime = searchParams.get('time');
+
+  useEffect(() => {
+    if (paramsdate) {
+      const parsedDate = new Date(paramsdate);
+      if (!isNaN(parsedDate.getTime())) {
+        setDate(parsedDate);
+      }
+    }
+  }, [paramsdate]);
+
   useEffect(() => {
     if (date) {
       form.setValue('date', date);
@@ -295,6 +326,7 @@ function StepTwo({ form, available, setAvailable }: StepProps) {
           setDate={setDate}
           available={available!}
           setAvailable={setAvailable!}
+          paramsTime={paramstime || null}
         />
       </div>
     </>

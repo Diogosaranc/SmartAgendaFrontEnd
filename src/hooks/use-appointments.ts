@@ -4,6 +4,8 @@ import {
   deleteAppointment,
   getAppointmentById,
   getAppointments,
+  getAppointmentsByDateRangeAndOrganizationId,
+  getAppointmentsByMonthYearAndOrganizationId,
   updateAppointment,
   UpdateAppointmentData,
 } from '@/lib/api/appointments';
@@ -52,19 +54,46 @@ export function useGetAppointmentById() {
   });
 }
 
-export function useGetAppointmentByName() {
+export function useGetAppointmentsByDateRange() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({
       organizationId,
-      name,
+      startDate,
+      endDate,
     }: {
       organizationId: string;
-      name: string;
-    }) => getAppointmentById(organizationId, name),
+      startDate: Date;
+      endDate: Date;
+    }) =>
+      getAppointmentsByDateRangeAndOrganizationId(
+        organizationId,
+        startDate,
+        endDate
+      ),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appointment', name] });
+      queryClient.invalidateQueries({ queryKey: ['appointment'] });
+    },
+  });
+}
+
+export function useGetAppointmentByMonth() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      organizationId,
+      month,
+      year,
+    }: {
+      organizationId: string;
+      month: number;
+      year: number;
+    }) =>
+      getAppointmentsByMonthYearAndOrganizationId(organizationId, month, year),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointment'] });
     },
   });
 }

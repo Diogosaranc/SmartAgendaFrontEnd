@@ -9,28 +9,33 @@ import { Card } from '@/components/ui/card';
 import ScheduleItem from './components/ScheduleItem';
 import { useState, useEffect, useRef } from 'react';
 import AgendaItem from './components/AgendaItem';
+import { useGetAppointmentsByDateRange } from '@/hooks/use-appointments';
+import { endOfWeek, set, startOfWeek } from 'date-fns';
+import { useOrganizationId } from '@/hooks/use-organization-id';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useRouter } from 'next/navigation';
 
-const schedules = [
-  { time: '08:00', available: true },
-  { time: '08:30', available: false },
-  { time: '09:00', available: true },
-  { time: '09:30', available: false },
-  { time: '10:00', available: true },
-  { time: '10:30', available: false },
-  { time: '11:00', available: true },
-  { time: '11:30', available: false },
-  { time: '12:00', available: true },
-  { time: '12:30', available: false },
-  { time: '13:00', available: true },
-  { time: '13:30', available: false },
-  { time: '14:00', available: true },
-  { time: '14:30', available: false },
-  { time: '15:00', available: true },
-  { time: '15:30', available: false },
-  { time: '16:00', available: true },
-  { time: '16:30', available: false },
-  { time: '17:00', available: true },
-  { time: '17:30', available: false },
+const schedule = [
+  { time: '08:00' },
+  { time: '08:30' },
+  { time: '09:00' },
+  { time: '09:30' },
+  { time: '10:00' },
+  { time: '10:30' },
+  { time: '11:00' },
+  { time: '11:30' },
+  { time: '12:00' },
+  { time: '12:30' },
+  { time: '13:00' },
+  { time: '13:30' },
+  { time: '14:00' },
+  { time: '14:30' },
+  { time: '15:00' },
+  { time: '15:30' },
+  { time: '16:00' },
+  { time: '16:30' },
+  { time: '17:00' },
+  { time: '17:30' },
 ];
 
 export default function CalendarPage() {
@@ -39,6 +44,67 @@ export default function CalendarPage() {
   const [time, setTime] = useState<string | undefined>(undefined);
   const cardRef = useRef<HTMLDivElement>(null);
   const agendaRef = useRef<HTMLDivElement>(null);
+
+  const organizationId = useOrganizationId();
+  const router = useRouter();
+
+  const [scheduleOnDay, setScheduleOnDay] = useState([
+    ...schedule.map((s) => ({ ...s, available: true })),
+  ]);
+
+  const [day, setDay] = useState(new Date());
+
+  const {
+    data: searchResults,
+    mutate: searchCustomers,
+    isPending: isSearching,
+  } = useGetAppointmentsByDateRange();
+
+  useEffect(() => {
+    if (day) {
+      const startDay = startOfWeek(day);
+      const endDay = endOfWeek(day);
+      searchCustomers({
+        organizationId,
+        startDate: startDay,
+        endDate: endDay,
+      });
+    }
+  }, [day, organizationId, searchCustomers]);
+
+  useEffect(() => {
+    if (day && searchResults) {
+      // Start with fresh schedule (all available)
+      let updatedSchedule = schedule.map((s) => ({ ...s, available: true }));
+
+      for (const appointment of searchResults) {
+        // Convert string date to Date object
+        const appointmentDate = new Date(appointment.date);
+
+        // Compare full date (year, month, day) instead of just day
+        if (
+          appointmentDate.getDate() === day.getDate() &&
+          appointmentDate.getMonth() === day.getMonth() &&
+          appointmentDate.getFullYear() === day.getFullYear()
+        ) {
+          const time = `${appointmentDate
+            .getHours()
+            .toString()
+            .padStart(2, '0')}:${appointmentDate
+            .getMinutes()
+            .toString()
+            .padStart(2, '0')}`;
+          updatedSchedule = updatedSchedule.map((schedule) =>
+            schedule.time === time
+              ? { ...schedule, available: false }
+              : schedule
+          );
+        }
+      }
+
+      setScheduleOnDay(updatedSchedule);
+    }
+  }, [day, searchResults]);
 
   // Auto-scroll on small screens when date is selected
   useEffect(() => {
@@ -72,18 +138,36 @@ export default function CalendarPage() {
   });
 
   const onSelectDate = (selectedDate: Date | undefined) => {
+    setDay(selectedDate || new Date());
     setDate(selectedDate);
     setHasSelectedDate(!!selectedDate);
   };
 
   const onSelectTime = (time: string) => {
     setTime(time);
+    const hours = parseInt(time.split(':')[0], 10);
+    const minutes = parseInt(time.split(':')[1], 10);
+    const newDate = set(date!, { hours, minutes });
+    console.log('New date selected:', newDate);
+    setDate(newDate);
   };
 
   const isAvailable = (): boolean => {
-    const timeAvailable = schedules.find((schedule) => schedule.time === time);
-
+    const timeAvailable = scheduleOnDay.find(
+      (schedule) => schedule.time === time
+    );
     return timeAvailable ? timeAvailable.available : false;
+  };
+
+  const onSchedule = () => {
+    const params = new URLSearchParams({
+      date: date?.toISOString() || '',
+      time: time || '',
+    });
+
+    router.push(
+      `/organizations/${organizationId}/schedule?${params.toString()}`
+    );
   };
 
   return (
@@ -134,14 +218,18 @@ export default function CalendarPage() {
           </div>
         </div>
         <div className='grid relative text-center gap-2 mt-2 overflow-y-auto max-h-96 w-[70%]'>
-          {schedules.map((schedule) => (
-            <ScheduleItem
-              key={schedule.time}
-              time={schedule.time}
-              available={schedule.available}
-              onClick={() => onSelectTime(schedule.time)}
-            />
-          ))}
+          {!isSearching ? (
+            scheduleOnDay.map((schedule) => (
+              <ScheduleItem
+                key={schedule.time}
+                time={schedule.time}
+                available={schedule.available}
+                onClick={() => onSelectTime(schedule.time)}
+              />
+            ))
+          ) : (
+            <Skeleton className='h-12 w-full' />
+          )}
         </div>
       </Card>
       <Card
@@ -158,7 +246,7 @@ export default function CalendarPage() {
         <AgendaItem
           available={isAvailable()}
           client='Diogo'
-          onClick={() => alert('Agendamento realizado com sucesso!')}
+          onClick={onSchedule}
         />
       </Card>
     </div>

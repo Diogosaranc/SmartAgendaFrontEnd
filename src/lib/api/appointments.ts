@@ -170,3 +170,45 @@ export async function rescheduleAppointment(
     throw new Error(`Failed to reschedule appointment: ${error}`);
   }
 }
+
+export async function getAppointmentsByDateRangeAndOrganizationId(
+  organizationId: string,
+  startDate: Date,
+  endDate: Date
+): Promise<Appointment[]> {
+  try {
+    const response = await api.get(
+      `/organizations/${organizationId}/appointments/list/by-date-range`,
+      {
+        params: {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+        },
+      }
+    );
+    return response.data.appointments as Appointment[];
+  } catch (error) {
+    throw new Error(`Failed to fetch appointments: ${error}`);
+  }
+}
+
+export async function getAppointmentsByMonthYearAndOrganizationId(
+  organizationId: string,
+  month: number,
+  year: number
+): Promise<Appointment[]> {
+  try {
+    const response = await api.get(
+      `/organizations/${organizationId}/appointments/by-month`,
+      {
+        params: {
+          month,
+          year,
+        },
+      }
+    );
+    return response.data as Appointment[];
+  } catch (error) {
+    throw new Error(`Failed to fetch appointments: ${error}`);
+  }
+}

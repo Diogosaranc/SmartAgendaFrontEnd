@@ -40,7 +40,7 @@ export async function getSpaceOfServices(
 ): Promise<SpaceOfService[]> {
   try {
     const response = await api.get(
-      `organizations/${organizationId}/spaceofservices/`
+      `organizations/${organizationId}/spaceofservices`
     );
     // Extract the spacesOfService array from the response
     const data = response.data as { spacesOfService: SpaceOfService[] };
