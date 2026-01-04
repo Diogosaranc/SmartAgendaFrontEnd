@@ -100,6 +100,11 @@ export default function AppSidebar({ className }: AppSidebarProps) {
       icon: Inbox,
     },
     {
+      title: 'Agenda',
+      url: `/organizations/${selectedOrganizationId}/agenda`,
+      icon: Calendar1,
+    },
+    {
       title: 'Calendário',
       url: `/organizations/${selectedOrganizationId}/calendar`,
       icon: CalendarDays,

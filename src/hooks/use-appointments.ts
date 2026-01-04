@@ -3,7 +3,6 @@ import {
   CreateAppointmentData,
   deleteAppointment,
   getAppointmentById,
-  getAppointments,
   getAppointmentsByDateRangeAndOrganizationId,
   getAppointmentsByMonthYearAndOrganizationId,
   updateAppointment,
@@ -28,14 +27,14 @@ export function useCreateAppointment() {
   });
 }
 
-export function useGetAppointments(organizationId: string) {
-  return useQuery({
-    queryKey: ['appointment', organizationId],
-    queryFn: () => getAppointments(organizationId),
-    enabled: !!organizationId,
-    staleTime: Infinity,
-  });
-}
+// export function useGetAppointments(organizationId: string) {
+//   return useQuery({
+//     queryKey: ['appointment', organizationId],
+//     queryFn: () => getAppointments(organizationId),
+//     enabled: !!organizationId,
+//     staleTime: Infinity,
+//   });
+// }
 
 export function useGetAppointmentById() {
   const queryClient = useQueryClient();
@@ -78,23 +77,17 @@ export function useGetAppointmentsByDateRange() {
   });
 }
 
-export function useGetAppointmentByMonth() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      organizationId,
-      month,
-      year,
-    }: {
-      organizationId: string;
-      month: number;
-      year: number;
-    }) =>
+export function useGetAppointmentsByMonth(
+  organizationId: string,
+  month: number,
+  year: number
+) {
+  return useQuery({
+    queryKey: ['appointment', 'month', organizationId, month, year],
+    queryFn: () =>
       getAppointmentsByMonthYearAndOrganizationId(organizationId, month, year),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appointment'] });
-    },
+    enabled: !!organizationId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 

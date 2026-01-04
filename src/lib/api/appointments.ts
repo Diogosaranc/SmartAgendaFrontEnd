@@ -10,17 +10,18 @@ export enum AppointmentStatus {
 
 export interface Appointment {
   id: string;
-  date: Date;
+  date: string;
   description: string;
+  observations: string;
   status: AppointmentStatus;
-  createdAt: Date;
-  updatedAt: Date | null;
-  canceledAt: Date | null;
-  finishedAt: Date | null;
-  organizationId: string;
+  createdAt: string;
+  updatedAt: string | null;
+  canceledAt: string | null;
+  finishedAt: string | null;
+  organizationId: { value: string };
   serviceId: string;
   spaceOfServiceId: string;
-  customerPhone: string;
+  customerId: string;
 }
 
 export interface CreateAppointmentData {
@@ -50,21 +51,21 @@ export interface changeStatusAppointmentData {
   organizationId: string;
 }
 
-// Get all appointments
-export async function getAppointments(
-  organizationId: string
-): Promise<Appointment[]> {
-  try {
-    const response = await api.get(
-      `/organizations/${organizationId}/appointments`
-    );
-    // Extract the appointments array from the response
+// // Get all appointments
+// export async function getAppointments(
+//   organizationId: string
+// ): Promise<Appointment[]> {
+//   try {
+//     const response = await api.get(
+//       `/organizations/${organizationId}/appointments`
+//     );
+//     // Extract the appointments array from the response
 
-    return response.data as Appointment[];
-  } catch (error) {
-    throw new Error(`Failed to fetch appointments: ${error}`);
-  }
-}
+//     return response.data as Appointment[];
+//   } catch (error) {
+//     throw new Error(`Failed to fetch appointments: ${error}`);
+//   }
+// }
 
 export async function getAppointmentById(
   organizationId: string,
@@ -207,7 +208,7 @@ export async function getAppointmentsByMonthYearAndOrganizationId(
         },
       }
     );
-    return response.data as Appointment[];
+    return response.data.appointments as Appointment[];
   } catch (error) {
     throw new Error(`Failed to fetch appointments: ${error}`);
   }
